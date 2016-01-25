@@ -233,6 +233,7 @@ if checkFragmentation and frag=='':
 # OK, finally in the actual status checking of the zpool
 
 # Let's build up our perfdata, regardless of what we're checking
+fragPercent=''
 if frag!='':
     fragPercent=frag.replace("%", "")
     fragPerfStr="frag="+str(fragPercent)+"%;"
@@ -243,6 +244,7 @@ if frag!='':
     perfdata+=(fragPerfStr)
     perfdata+=" "
 
+capPercent=''
 if cap!='':
     capPercent=cap.replace("%", "")
     capPerfStr="cap="+str(capPercent)+"%;"
@@ -269,6 +271,8 @@ if free!='':
     perfdata+="free="+str(freeGB)+"GB;;;"
     perfdata+=" "
 
+##
+# Do mandatory checks
 healthNum=-1
 if health=='ONLINE':
     healthNum=0
@@ -290,16 +294,48 @@ elif health=='FAULTED':
 perfdata+="health="+str(healthNum)+";1;3;"
 perfdata+=" "
 
-msg="POOL: "+str(name)+", STATUS: "+health
+##
+# Initial part of msg
+msg="POOL: "+str(name)
+healthMsgFilled=False
+if healthNum > 0: 
+    msg+=", STATUS: "+str(health)
+    healthMsgFilled=True
+
+##
+# Do optional checks
+fragMsgFilled=False
+capMsgFilled=False
+if checkFragmentation and fragPercent!='':
+    fragMsgFilled=True
+    if int(fragPercent) > int(fragCritThreshold):
+        stateNum = RaiseStateNum(2, stateNum)
+        msg+=", FRAG CRIT: "+str(frag)
+    elif int(fragPercent) > int(fragWarnThreshold):
+        stateNum = RaiseStateNum(1, stateNum)
+        msg+=", FRAG WARN: "+str(frag)
+if checkCapacity and capPercent!='':
+    capMsgFilled=True
+    if int(capPercent) > int(capCritThreshold):
+        stateNum = RaiseStateNum(2, stateNum)
+        msg+=", CAP CRIT: "+str(cap)
+    elif int(capPercent) > int(capWarnThreshold):
+        stateNum = RaiseStateNum(1, stateNum)
+        msg+=", CAP WARN: "+str(cap)
+
+##
+# Build up rest of message
+if not healthMsgFilled:
+    msg+=", STATUS: "+str(health)
 if size!='':
     msg+=", SIZE: "+str(size)
 if alloc!='':
     msg+=", ALLOC: "+str(alloc)
 if free!='':
     msg+=", FREE: "+str(free)
-if frag!='':
+if frag!='' and not fragMsgFilled:
     msg+=", FRAG: "+str(frag)
-if cap!='':
+if cap!='' and not capMsgFilled:
     msg+=", CAP: "+str(cap)
 
 ##
