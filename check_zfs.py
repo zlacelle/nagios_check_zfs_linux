@@ -307,19 +307,21 @@ if healthNum > 0:
 fragMsgFilled=False
 capMsgFilled=False
 if checkFragmentation and fragPercent!='':
-    fragMsgFilled=True
     if int(fragPercent) > int(fragCritThreshold):
+        fragMsgFilled=True
         stateNum = RaiseStateNum(2, stateNum)
         msg+=", FRAG CRIT: "+str(frag)
     elif int(fragPercent) > int(fragWarnThreshold):
+        fragMsgFilled=True
         stateNum = RaiseStateNum(1, stateNum)
         msg+=", FRAG WARN: "+str(frag)
 if checkCapacity and capPercent!='':
-    capMsgFilled=True
     if int(capPercent) > int(capCritThreshold):
+        capMsgFilled=True
         stateNum = RaiseStateNum(2, stateNum)
         msg+=", CAP CRIT: "+str(cap)
     elif int(capPercent) > int(capWarnThreshold):
+        capMsgFilled=True
         stateNum = RaiseStateNum(1, stateNum)
         msg+=", CAP WARN: "+str(cap)
 
