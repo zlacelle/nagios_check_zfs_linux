@@ -52,13 +52,13 @@ perfdata=''
 # Filled from command line arguments
 ##
 checkCapacity=False
-capWarnThreshold=0.5
-capCritThreshold=0.8
+capWarnThreshold=50
+capCritThreshold=80
 checkFragmentation=False
-fragWarnThreshold=0.5
-fragCritThreshold=0.8
+fragWarnThreshold=50
+fragCritThreshold=80
 
-def CheckArgFloatBounds( valueArr, minVal, maxVal ):
+def CheckArgBounds( valueArr, minVal, maxVal ):
     for value in valueArr:
         if value < minVal:
             return False
@@ -82,8 +82,7 @@ def ConvertToGB( valueStr ):
 
 def RaiseStateNum( stateNumIn, stateNum ):
     if stateNumIn > stateNum:
-        stateNum=stateNumIn
-    return
+        return stateNumIn
 
 ###################################################################################
 ##
@@ -93,8 +92,8 @@ parser = argparse.ArgumentParser(
     prog='check_zfs',
     description='Check the ZFS pool specified by an argument.',
     epilog='Note that monitor flags (e.g. capacity) require 2 arguments: warning threshold, and critical threshold')
-parser.add_argument('--capacity', help="monitor utilization of zpool (%%, float [0-1]", type=float, nargs=2)
-parser.add_argument('--fragmentation', help="monitor fragmentation of zpool (%%, float [0-1])", type=float, nargs=2)
+parser.add_argument('--capacity', help="monitor utilization of zpool (%%, int [0-100]", type=int, nargs=2)
+parser.add_argument('--fragmentation', help="monitor fragmentation of zpool (%%, int [0-100])", type=int, nargs=2)
 parser.add_argument('pool', help="name of the zpool to check", type=str)
 
 args = parser.parse_args()
@@ -104,11 +103,11 @@ if args.capacity is not None:
     checkCapacity=True
     capWarnThreshold=args.capacity[0]
     capCritThreshold=args.capacity[1]
-    capArr = array('d', [capWarnThreshold, capCritThreshold])
-    retVal = CheckArgFloatBounds(capArr, 0.0, 1.0)
+    capArr = array('i', [capWarnThreshold, capCritThreshold])
+    retVal = CheckArgBounds(capArr, 0, 100)
     if retVal is False:
-        RaiseStateNum(3, stateNum)
-        print nagiosStatus[stateNum] + ": Capacity thresholds must be between 0 and 1."
+        stateNum = RaiseStateNum(3, stateNum)
+        print nagiosStatus[stateNum] + ": Capacity thresholds must be between 0 and 100 (as a percent)."
         parser.print_help()
         exit(stateNum)
 retVal = True
@@ -116,11 +115,11 @@ if args.fragmentation is not None:
     checkFragmentation=True
     fragWarnThreshold=args.fragmentation[0]
     fragCritThreshold=args.fragmentation[1]
-    fragArr = array('d', [fragWarnThreshold, fragCritThreshold])
-    retVal = CheckArgFloatBounds(fragArr, 0.0, 1.0)
+    fragArr = array('i', [fragWarnThreshold, fragCritThreshold])
+    retVal = CheckArgBounds(fragArr, 0, 100)
     if retVal is False:
-        RaiseStateNum(3, stateNum)
-        print nagiosStatus[stateNum] + ": Fragmentation thresholds must be between 0 and 1."
+        stateNum = RaiseStateNum(3, stateNum)
+        print nagiosStatus[stateNum] + ": Fragmentation thresholds must be between 0 and 100 (as a percent)."
         parser.print_help()
         exit(stateNum)
 ###################################################################################
@@ -136,7 +135,7 @@ zfsString = childProcess.communicate()[0]
 zfsRetval = childProcess.returncode
 
 if zfsRetval is 1:
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"    
     exit(stateNum)
 
@@ -152,7 +151,7 @@ for entry in zfsEntries:
     if entry[0] == args.pool:
         validPool=True
 if not validPool:
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": Pool " + args.pool + " is invalid. Please select a valid pool."
     exit(stateNum)
 
@@ -169,7 +168,7 @@ zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"
     exit(stateNum)
 
@@ -213,19 +212,19 @@ for idx, fieldName in enumerate(zpoolMeta):
         altroot=zpoolEntry[idx]
 
 if name=='':
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": Missing required field in zpool output: NAME"
     exit(stateNum)
 if health=='':
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": Missing required field in zpool output: HEALTH"
     exit(stateNum)
 if checkCapacity and cap=='':
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": Cannot monitor capacity without zpool output: CAP. Outputs are" + zpoolMetaStr
     exit(stateNum)
 if checkFragmentation and frag=='':
-    RaiseStateNum(3, stateNum)
+    stateNum = RaiseStateNum(3, stateNum)
     print nagiosStatus[stateNum] + ": Cannot monitor fragmentation without zpool output: FRAG. Outputs are " + zpoolMetaStr
     exit(stateNum)
 
@@ -236,8 +235,7 @@ if checkFragmentation and frag=='':
 # Let's build up our perfdata, regardless of what we're checking
 if frag!='':
     fragPercent=frag.replace("%", "")
-    fragFraction=float(fragPercent) / 100.0
-    fragPerfStr="frag="+str(fragFraction)+";"
+    fragPerfStr="frag="+str(fragPercent)+"%;"
     if checkFragmentation:
         fragPerfStr=fragPerfStr+str(fragWarnThreshold)+";"+str(fragCritThreshold)+";"
     else:
@@ -247,8 +245,7 @@ if frag!='':
 
 if cap!='':
     capPercent=cap.replace("%", "")
-    capFraction=float(capPercent) / 100.0
-    capPerfStr="cap="+str(capFraction)+";"
+    capPerfStr="cap="+str(capPercent)+"%;"
     if checkCapacity:
         capPerfStr=capPerfStr+str(capWarnThreshold)+";"+str(capCritThreshold)+";"
     else:
@@ -259,36 +256,36 @@ if cap!='':
 # Sizes can be in K, M, G, or T (maybe P, but I'm not doing this yet)
 if size!='':
     sizeGB = ConvertToGB(size)
-    perfdata+="size="+str(sizeGB)+";;;"
+    perfdata+="size="+str(sizeGB)+"GB;;;"
     perfdata+=" "
 
 if alloc!='':
     allocGB = ConvertToGB(alloc)
-    perfdata+="alloc="+str(allocGB)+";;;"
+    perfdata+="alloc="+str(allocGB)+"GB;;;"
     perfdata+=" "
 
 if free!='':
     freeGB = ConvertToGB(free)
-    perfdata+="free="+str(freeGB)+";;;"
+    perfdata+="free="+str(freeGB)+"GB;;;"
     perfdata+=" "
 
 healthNum=-1
 if health=='ONLINE':
     healthNum=0
 elif health=='OFFLINE':
-    RaiseStateNum(1, stateNum)
+    stateNum = RaiseStateNum(1, stateNum)
     healthNum=1
 elif health=='REMOVED':
-    RaiseStateNum(1, stateNum)
+    stateNum = RaiseStateNum(1, stateNum)
     healthNum=2
 elif health=='UNAVAIL':
-    RaiseStateNum(1, stateNum)
+    stateNum = RaiseStateNum(1, stateNum)
     healthNum=3
 elif health=='DEGRADED':
-    RaiseStateNum(2, stateNum)
+    stateNum = RaiseStateNum(2, stateNum)
     healthNum=4
 elif health=='FAULTED':
-    RaiseStateNum(2, stateNum)
+    stateNum = RaiseStateNum(2, stateNum)
     healthNum=5
 perfdata+="health="+str(healthNum)+";1;3;"
 perfdata+=" "
