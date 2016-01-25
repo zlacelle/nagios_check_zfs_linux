@@ -5,6 +5,7 @@ A plugin to check ZFS pools in Linux
 ------------------------------------
 
 Author: Zachary LaCelle
+
 License: GPLv3
 
 This program is free software: you can redistribute it and/or modify
