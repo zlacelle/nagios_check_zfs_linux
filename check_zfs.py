@@ -68,6 +68,7 @@ def CheckArgBounds( valueArr, minVal, maxVal ):
 
 def ConvertToGB( valueStr ):
     value = valueStr[:-1]
+    value = value.replace(',', '.')
     if valueStr.endswith('G'):
         return float(value)
     elif valueStr.endswith('T'):
