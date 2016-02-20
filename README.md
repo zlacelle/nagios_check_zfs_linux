@@ -30,3 +30,4 @@ It provides perfdata feedback as well.
 
 ### Currently tested OS/ZFS versions
 * Ubuntu 14.04 LTS, ZFS v5
+* CentOS 7, ZFS v5
