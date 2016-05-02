@@ -10,7 +10,8 @@
 ## in Linux.
 ##
 ## Tested operating systems/ZFS versions:
-##  * Ubuntu 14.04.3 LTS, ZFS v5
+##  * Ubuntu 14.04 LTS, ZFS v5
+##  * CentOS 7, ZFS v5
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -32,6 +33,7 @@ import subprocess
 import argparse
 from array import *
 from types import *
+from os import geteuid
 
 ##
 # Commands to run
@@ -124,6 +126,14 @@ if args.fragmentation is not None:
         parser.print_help()
         exit(stateNum)
 ###################################################################################
+###################################################################################
+##
+# Verify that we're running as root.  This should render redundant some checks
+# below, but we'll leave them there in case of bugs and to make this more readable.
+if geteuid() != 0:
+    stateNum = RaiseStateNum(3, stateNum)
+    print nagiosStatus[stateNum] + ": process must be run as root.  Did you for get sudo?  If not, possible solution: add the following toyour visudo: nagios ALL=NOPASSWD: /sbin/zfs"
+    exit(stateNum)
 
 ###################################################################################
 ##
