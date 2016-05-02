@@ -130,10 +130,10 @@ if args.fragmentation is not None:
 ##
 # Verify that we're running as root.  This should render redundant some checks
 # below, but we'll leave them there in case of bugs and to make this more readable.
-if geteuid() != 0:
-    stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root.  Did you for get sudo?  If not, possible solution: add the following toyour visudo: nagios ALL=NOPASSWD: /sbin/zfs"
-    exit(stateNum)
+#if geteuid() != 0:
+#    stateNum = RaiseStateNum(3, stateNum)
+#    print nagiosStatus[stateNum] + ": process must be run as root.  Did you for get sudo?  If not, possible solution: add the following toyour visudo: nagios ALL=NOPASSWD: /sbin/zfs"
+#    exit(stateNum)
 
 ###################################################################################
 ##
