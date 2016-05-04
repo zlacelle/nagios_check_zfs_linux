@@ -139,9 +139,14 @@ if args.fragmentation is not None:
 ##
 # Get generic info about the ZFS environment
 zfsEntries = []
-zfsArgs=' list'
-fullCommand='sudo -n ' + zfsCommand + zfsArgs
-childProcess = subprocess.Popen(fullCommand, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+fullCommand=['/usr/bin/sudo', '-n', zfsCommand, 'list']
+try:
+    childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+except OSError:
+    stateNum = RaiseStateNum(3, stateNum)
+    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"    
+    exit(stateNum)
+
 zfsString = childProcess.communicate()[0]
 zfsRetval = childProcess.returncode
 
@@ -170,11 +175,15 @@ if not validPool:
 ##
 # Get info on zpool
 
-zpoolArgs=' list ' + args.pool;
-fullCommand='sudo -n ' + zpoolCommand + zpoolArgs
+fullCommand=['/usr/bin/sudo', '-n', zpoolCommand, 'list', args.pool]
 
-childProcess = subprocess.Popen(fullCommand, shell=True, stdin=subprocess.PIPE, 
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+try:
+    childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, 
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+except OSError:
+    stateNum = RaiseStateNum(3, stateNum)
+    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"    
+    exit(stateNum)
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
