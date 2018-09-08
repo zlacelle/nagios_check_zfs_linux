@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 ########################################################################
-## 
+##
 ## Written by Zachary LaCelle
 ## Copyright 2016
-## Licensed under GPL (see below) 
+## Licensed under GPL (see below)
 ##
 ## Nagios script to monitor ZFS pools/filesystems
 ## in Linux.
@@ -86,6 +86,7 @@ def ConvertToGB( valueStr ):
 def RaiseStateNum( stateNumIn, stateNum ):
     if stateNumIn > stateNum:
         return stateNumIn
+    return stateNum
 
 ###################################################################################
 ##
@@ -95,7 +96,7 @@ parser = argparse.ArgumentParser(
     prog='check_zfs',
     description='Check the ZFS pool specified by an argument.',
     epilog='Note that monitor flags (e.g. capacity) require 2 arguments: warning threshold, and critical threshold')
-parser.add_argument('--capacity', help="monitor utilization of zpool (%%, int [0-100]", type=int, nargs=2)
+parser.add_argument('--capacity', help="monitor utilization of zpool (%%, int [0-100])", type=int, nargs=2)
 parser.add_argument('--fragmentation', help="monitor fragmentation of zpool (%%, int [0-100])", type=int, nargs=2)
 parser.add_argument('pool', help="name of the zpool to check", type=str)
 
@@ -144,7 +145,7 @@ try:
     childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"    
+    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"
     exit(stateNum)
 
 zfsString = childProcess.communicate()[0]
@@ -152,7 +153,7 @@ zfsRetval = childProcess.returncode
 
 if zfsRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"    
+    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"
     exit(stateNum)
 
 zfsLines = zfsString.splitlines()
@@ -178,11 +179,11 @@ if not validPool:
 fullCommand=['/usr/bin/sudo', '-n', zpoolCommand, 'list', args.pool]
 
 try:
-    childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, 
+    childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"    
+    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"
     exit(stateNum)
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
@@ -274,7 +275,7 @@ if cap!='':
         capPerfStr+=(";;");
     perfdata+=(capPerfStr)
     perfdata+=" "
-    
+
 # Sizes can be in K, M, G, or T (maybe P, but I'm not doing this yet)
 if size!='':
     sizeGB = ConvertToGB(size)
@@ -318,7 +319,7 @@ perfdata+=" "
 # Initial part of msg
 msg="POOL: "+str(name)
 healthMsgFilled=False
-if healthNum > 0: 
+if healthNum > 0:
     msg+=", STATUS: "+str(health)
     healthMsgFilled=True
 
