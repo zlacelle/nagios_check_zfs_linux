@@ -29,5 +29,5 @@ fragmentation, and other things for use with Nagios monitoring.
 It provides perfdata feedback as well.
 
 ### Currently tested OS/ZFS versions
-* Ubuntu 14.04 LTS, ZFS v5
+* Ubuntu 14.04/16.04/18.04 LTS, ZFS v5
 * CentOS 7, ZFS v5
