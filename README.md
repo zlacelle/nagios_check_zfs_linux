@@ -34,3 +34,16 @@ It provides perfdata feedback as well.
 * Ubuntu 16.04 LTS, ZFS v5
 * Ubuntu 18.04 LTS, ZFS v5
 * CentOS 7, ZFS v5
+
+### SELinux ###
+
+On systems with SELinux in enforcing mode nrpe is not granted the 
+required permissions by SELinux, for that you can compile a policy
+module, then a policy package that can then be installed.
+
+A sample can be used as follows:
+* Build a policy module: checkmodule -M -m -o check_zfs_py.mod contrib/SELinux/check_zfs_py.te
+* Build a policy package: semodule_package -o check_zfs_py.pp -m check_zfs_py.mod
+* Load the policy package: semodule -i check_zfs_py.pp
+
+If you want to unload it: semodule -i check_zfs_py

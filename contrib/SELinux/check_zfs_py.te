@@ -1,0 +1,14 @@
+
+module check_zfs_py 1.0.5;
+
+require {
+	type nrpe_t;
+	type device_t;
+	class chr_file { ioctl open read write };
+}
+
+#============= nrpe_t ==============
+allow nrpe_t device_t:chr_file { read write };
+
+#!!!! This avc is allowed in the current policy
+allow nrpe_t device_t:chr_file { ioctl open };
