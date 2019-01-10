@@ -9,10 +9,6 @@
 ## Nagios script to monitor ZFS pools/filesystems
 ## in Linux.
 ##
-## Tested operating systems/ZFS versions:
-##  * Ubuntu 14.04 LTS, ZFS v5
-##  * CentOS 7, ZFS v5
-##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
