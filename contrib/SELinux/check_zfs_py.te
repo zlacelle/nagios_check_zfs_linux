@@ -1,14 +1,19 @@
 
-module check_zfs_py 1.0.5;
+module check_zfs_py 1.0.7;
 
 require {
 	type nrpe_t;
 	type device_t;
+	type systemd_logind_t;
+	type nagios_unconfined_plugin_t;
 	class chr_file { ioctl open read write };
+	class dbus send_msg;
 }
 
 #============= nrpe_t ==============
 allow nrpe_t device_t:chr_file { read write };
+
+allow systemd_logind_t nagios_unconfined_plugin_t:dbus send_msg;
 
 #!!!! This avc is allowed in the current policy
 allow nrpe_t device_t:chr_file { ioctl open };
