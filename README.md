@@ -44,6 +44,9 @@ to store all of your local configs. One example would be:
 cfg_dir=/usr/local/nagios/etc/objects/conf.d
 ```
 
+This also assumes you've installed check_zfs.py to your nagios/libexec directory. One way would be to
+softlink it to your directory where you've checked out the Git repository.
+
 Below is an example set of command definitions which allow various levels of fidelity in zpool querying:
 
 ```
@@ -52,19 +55,19 @@ Below is an example set of command definitions which allow various levels of fid
 define command {
 
     command_name    check_zpool_full
-    command_line    $USER1$/check_zfs --capacity $ARG2$ $ARG3$ --fragmentation $ARG4$ $ARG5$
+    command_line    $USER1$/check_zfs.py --capacity $ARG2$ $ARG3$ --fragmentation $ARG4$ $ARG5$
 }
 
 define command {
 
     command_name    check_zpool_capacity
-    command_line    $USER1$/check_zfs --capacity $ARG2$ $ARG3$ $ARG1$
+    command_line    $USER1$/check_zfs.py --capacity $ARG2$ $ARG3$ $ARG1$
 }
 
 define command {
 
     command_name    check_zpool
-    command_line    $USER1$/check_zfs $ARG1$
+    command_line    $USER1$/check_zfs.py $ARG1$
 }
 ```
 
