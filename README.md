@@ -55,7 +55,7 @@ Below is an example set of command definitions which allow various levels of fid
 define command {
 
     command_name    check_zpool_full
-    command_line    $USER1$/check_zfs.py --capacity $ARG2$ $ARG3$ --fragmentation $ARG4$ $ARG5$
+    command_line    $USER1$/check_zfs.py --capacity $ARG2$ $ARG3$ --fragmentation $ARG4$ $ARG5$ $ARG1$
 }
 
 define command {
