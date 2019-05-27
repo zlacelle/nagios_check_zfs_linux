@@ -35,6 +35,59 @@ It provides perfdata feedback as well.
 * Ubuntu 18.04 LTS, ZFS v5
 * CentOS 7, ZFS v5
 
+### Example Nagios4 Configuration
+
+This assumes you've set up a separate local configuration file include directory in your nagios.cfg
+to store all of your local configs. One example would be:
+
+```
+cfg_dir=/usr/local/nagios/etc/objects/conf.d
+```
+
+Below is an example set of command definitions which allow various levels of fidelity in zpool querying:
+
+```
+#Commands to check zpool status
+
+define command {
+
+    command_name    check_zpool_full
+    command_line    $USER1$/check_zfs --capacity $ARG2$ $ARG3$ --fragmentation $ARG4$ $ARG5$
+}
+
+define command {
+
+    command_name    check_zpool_capacity
+    command_line    $USER1$/check_zfs --capacity $ARG2$ $ARG3$ $ARG1$
+}
+
+define command {
+
+    command_name    check_zpool
+    command_line    $USER1$/check_zfs $ARG1$
+}
+```
+
+Below is an example service definition using the above commands which will check the pool named "storage"
+for both capacity (warn at 70%, critical at 85%) and fragmentation (warn at 30%, critical at 40%):
+
+```
+define service {
+    use                     local-service
+    host_name               localhost
+    service_description     ZPOOL STORAGE
+    check_command           check_zpool_full!storage!70!85!30!40
+    notifications_enabled   1
+}
+```
+
+Below is an example NRPE configuration which will accept the single argument "check_zpool" and run the
+commands:
+
+```
+TODO
+```
+
 ### SELinux ###
 
 On systems with SELinux in enforcing mode nrpe is not granted the 
