@@ -9,6 +9,12 @@
 ## Nagios script to monitor ZFS pools/filesystems
 ## in Linux.
 ##
+## Tested operating systems/ZFS versions:
+##  * Ubuntu 14.04 LTS, ZFS v5
+##  * CentOS 7, ZFS v5
+##  * CentOS 7, ZFS v5
+##  * omnios-r151030
+##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +33,8 @@
 from sys import exit
 import subprocess
 import argparse
+import logging
+import sys
 from array import *
 from types import *
 from os import geteuid
@@ -55,6 +63,9 @@ capCritThreshold=80
 checkFragmentation=False
 fragWarnThreshold=50
 fragCritThreshold=80
+
+logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARN);
+
 
 def CheckArgBounds( valueArr, minVal, maxVal ):
     for value in valueArr:
@@ -107,7 +118,7 @@ if args.capacity is not None:
     retVal = CheckArgBounds(capArr, 0, 100)
     if retVal is False:
         stateNum = RaiseStateNum(3, stateNum)
-        print nagiosStatus[stateNum] + ": Capacity thresholds must be between 0 and 100 (as a percent)."
+        logging.warn("%s : Capacity thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
         parser.print_help()
         exit(stateNum)
 retVal = True
@@ -119,7 +130,7 @@ if args.fragmentation is not None:
     retVal = CheckArgBounds(fragArr, 0, 100)
     if retVal is False:
         stateNum = RaiseStateNum(3, stateNum)
-        print nagiosStatus[stateNum] + ": Fragmentation thresholds must be between 0 and 100 (as a percent)."
+        logging.warn("%s  : Fragmentation thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
         parser.print_help()
         exit(stateNum)
 ###################################################################################
@@ -141,7 +152,7 @@ try:
     childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"
+    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
     exit(stateNum)
 
 zfsString = childProcess.communicate()[0]
@@ -149,7 +160,7 @@ zfsRetval = childProcess.returncode
 
 if zfsRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs"
+    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
     exit(stateNum)
 
 zfsLines = zfsString.splitlines()
@@ -161,11 +172,11 @@ for idx, line in enumerate(zfsLines):
 # Make sure the pool we specified is valid
 validPool=False
 for entry in zfsEntries:
-    if entry[0] == args.pool:
+    if entry[0].decode() == args.pool:
         validPool=True
 if not validPool:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": Pool " + args.pool + " is invalid. Please select a valid pool."
+    logging.warn("%s : Pool %s is invalid. Please select a valid pool.",  nagiosStatus[stateNum], args.pool)
     exit(stateNum)
 
 ###################################################################################
@@ -179,20 +190,20 @@ try:
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"
+    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool"
+    logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 
 zpoolLines=zpoolString.splitlines()
-zpoolMeta=zpoolLines[0].split()
+zpoolMeta=zpoolLines[0].decode().split()
 zpoolMetaStr=','.join(zpoolMeta)
-zpoolEntry=zpoolLines[1].split()
+zpoolEntry=zpoolLines[1].decode().split()
 zpoolEntryStr=','.join(zpoolEntry)
 
 name=''
@@ -230,19 +241,19 @@ for idx, fieldName in enumerate(zpoolMeta):
 
 if name=='':
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": Missing required field in zpool output: NAME"
+    logging.warn("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
     exit(stateNum)
 if health=='':
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": Missing required field in zpool output: HEALTH"
+    logging.warn("%s : Missing required field in zpool output: HEALTH", nagiosStatus[stateNum])
     exit(stateNum)
 if checkCapacity and cap=='':
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": Cannot monitor capacity without zpool output: CAP. Outputs are" + zpoolMetaStr
+    logging.warn("%s Cannot monitor capacity without zpool output: CAP. Outputs are %s", nagiosStatus[stateNum], zpoolMetaStr)
     exit(stateNum)
 if checkFragmentation and frag=='':
     stateNum = RaiseStateNum(3, stateNum)
-    print nagiosStatus[stateNum] + ": Cannot monitor fragmentation without zpool output: FRAG. Outputs are " + zpoolMetaStr
+    logging.warn("%s : Cannot monitor fragmentation without zpool output: FRAG. Outputs are ", nagiosStatus[stateNum], zpoolMetaStr)
     exit(stateNum)
 
 ###################################################################################
@@ -324,11 +335,12 @@ if healthNum > 0:
 fragMsgFilled=False
 capMsgFilled=False
 if checkFragmentation and fragPercent!='':
-    if int(fragPercent) > int(fragCritThreshold):
+    if fragPercent.isdigit() == True:
+      if int(fragPercent) > int(fragCritThreshold):
         fragMsgFilled=True
         stateNum = RaiseStateNum(2, stateNum)
         msg+=", FRAG CRIT: "+str(frag)
-    elif int(fragPercent) > int(fragWarnThreshold):
+      elif int(fragPercent) > int(fragWarnThreshold):
         fragMsgFilled=True
         stateNum = RaiseStateNum(1, stateNum)
         msg+=", FRAG WARN: "+str(frag)
@@ -359,5 +371,5 @@ if cap!='' and not capMsgFilled:
 
 ##
 # Print our output and return
-print nagiosStatus[stateNum]+": "+msg+" | "+perfdata
+logging.warn("%s: %s | %s", nagiosStatus[stateNum], msg, perfdata)
 exit(stateNum)
