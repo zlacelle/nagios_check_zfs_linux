@@ -11,6 +11,7 @@
 ##
 ## Tested operating systems/ZFS versions:
 ##  * Ubuntu 14.04 LTS, ZFS v5
+##  * Ubuntu 18.04 LTS, ZFS v5
 ##  * CentOS 7, ZFS v5
 ##  * CentOS 7, ZFS v5
 ##  * omnios-r151030
