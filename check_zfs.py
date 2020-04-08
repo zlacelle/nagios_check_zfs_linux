@@ -10,11 +10,7 @@
 ## in Linux.
 ##
 ## Tested operating systems/ZFS versions:
-##  * Ubuntu 14.04 LTS, ZFS v5
-##  * Ubuntu 18.04 LTS, ZFS v5
-##  * CentOS 7, ZFS v5
-##  * CentOS 7, ZFS v5
-##  * omnios-r151030
+##  * See README.md
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
