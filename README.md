@@ -34,6 +34,7 @@ It provides perfdata feedback as well.
 * Ubuntu 16.04 LTS, ZFS v5
 * Ubuntu 18.04 LTS, ZFS v5
 * CentOS 7, ZFS v5
+* OmniOS r151030
 
 ### Example Nagios4 Configuration
 
