@@ -214,6 +214,7 @@ dedup=''
 health=''
 altroot=''
 
+
 for idx, fieldName in enumerate(zpoolMeta):
     if fieldName=='NAME':
         name=zpoolEntry[idx]
@@ -278,20 +279,23 @@ zpoolMetaStr=','.join(zpoolMeta)
 zpoolEntry=zpoolLines[1].decode().split()
 zpoolEntryStr=','.join(zpoolEntry)
 
-compress_name=''
-compress_value=''
+compressName=''
+compressValue=''
+
+compressRatioName=''
+compressRatioValue=''
 
 for idx, fieldName in enumerate(zpoolMeta):
     if fieldName=='NAME':
-        compress_name=zpoolEntry[idx]
+        compressName=zpoolEntry[idx]
     elif fieldName=='VALUE':
-        compress_value=zpoolEntry[idx]
+        compressValue=zpoolEntry[idx]
 
-if compress_name=='':
+if compressName=='':
     stateNum = RaiseStateNum(3, stateNum)
     logging.warn("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
     exit(stateNum)
-if compress_value=='on':
+if compressValue=='on':
     getCompressRatioCommand=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compressratio', args.pool]
 
     try:
@@ -315,15 +319,11 @@ if compress_value=='on':
     zpoolEntry=zpoolLines[1].decode().split()
     zpoolEntryStr=','.join(zpoolEntry)
 
-    compress_ratio_name=''
-    compress_ratio_value=''
-
-
     for idx, fieldName in enumerate(zpoolMeta):
         if fieldName=='NAME':
-            compress_ratio_name=zpoolEntry[idx]
+            compressRatioName=zpoolEntry[idx]
         elif fieldName=='VALUE':
-            compress_ratio_value=zpoolEntry[idx]
+            compressRatioValue=zpoolEntry[idx]
 
 ###################################################################################
 ##
@@ -358,9 +358,9 @@ if dedup!='':
     perfdata+="dedup="+str(dedup_no_x)
     perfdata+=" "
 
-if compress_ratio_value!='':
-    compress_ratio_no_x = compress_ratio_value.rstrip('x')
-    perfdata+="compress_ratio="+str(compress_ratio_no_x)
+if compressRatioValue!='':
+    compressRatioNoX = compressRatioValue.rstrip('x')
+    perfdata+="compress_ratio="+str(compressRatioNoX)
     perfdata+=" "
 
 # Sizes can be in K, M, G, or T (maybe P, but I'm not doing this yet)
@@ -446,8 +446,8 @@ if free!='':
     msg+=", FREE: "+str(free)
 if dedup!='':
     msg+=", DEDUP: "+str(dedup)
-if compress_ratio_value!='':
-    msg+=", COMPRESS: "+str(compress_ratio_value)
+if compressRatioValue!='':
+    msg+=", COMPRESS: "+str(compressRatioValue)
 if frag!='' and not fragMsgFilled:
     msg+=", FRAG: "+str(frag)
 if cap!='' and not capMsgFilled:
