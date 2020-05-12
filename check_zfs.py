@@ -253,6 +253,78 @@ if checkFragmentation and frag=='':
     logging.warn("%s : Cannot monitor fragmentation without zpool output: FRAG. Outputs are ", nagiosStatus[stateNum], zpoolMetaStr)
     exit(stateNum)
 
+# Get compressratio on zpool
+
+checkForCompression=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compression', args.pool]
+
+try:
+    childProcess = subprocess.Popen(checkForCompression, stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+except OSError:
+    stateNum = RaiseStateNum(3, stateNum)
+    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    exit(stateNum)
+zpoolString = childProcess.communicate()[0]
+zpoolRetval = childProcess.returncode
+
+if zpoolRetval is 1:
+    stateNum = RaiseStateNum(3, stateNum)
+    logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    exit(stateNum)
+
+zpoolLines=zpoolString.splitlines()
+zpoolMeta=zpoolLines[0].decode().split()
+zpoolMetaStr=','.join(zpoolMeta)
+zpoolEntry=zpoolLines[1].decode().split()
+zpoolEntryStr=','.join(zpoolEntry)
+
+compress_name=''
+compress_value=''
+
+for idx, fieldName in enumerate(zpoolMeta):
+    if fieldName=='NAME':
+        compress_name=zpoolEntry[idx]
+    elif fieldName=='VALUE':
+        compress_value=zpoolEntry[idx]
+
+if compress_name=='':
+    stateNum = RaiseStateNum(3, stateNum)
+    logging.warn("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
+    exit(stateNum)
+if compress_value=='on':
+    getCompressRatioCommand=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compressratio', args.pool]
+
+    try:
+        childProcess = subprocess.Popen(getCompressRatioCommand, stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        stateNum = RaiseStateNum(3, stateNum)
+        logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+        exit(stateNum)
+    zpoolString = childProcess.communicate()[0]
+    zpoolRetval = childProcess.returncode
+
+    if zpoolRetval is 1:
+        stateNum = RaiseStateNum(3, stateNum)
+        logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+        exit(stateNum)
+
+    zpoolLines=zpoolString.splitlines()
+    zpoolMeta=zpoolLines[0].decode().split()
+    zpoolMetaStr=','.join(zpoolMeta)
+    zpoolEntry=zpoolLines[1].decode().split()
+    zpoolEntryStr=','.join(zpoolEntry)
+
+    compress_ratio_name=''
+    compress_ratio_value=''
+
+
+    for idx, fieldName in enumerate(zpoolMeta):
+        if fieldName=='NAME':
+            compress_ratio_name=zpoolEntry[idx]
+        elif fieldName=='VALUE':
+            compress_ratio_value=zpoolEntry[idx]
+
 ###################################################################################
 ##
 # OK, finally in the actual status checking of the zpool
@@ -278,6 +350,17 @@ if cap!='':
     else:
         capPerfStr+=(";;");
     perfdata+=(capPerfStr)
+    perfdata+=" "
+
+# Perfdata for dedup & compression factor
+if dedup!='':
+    dedup_no_x = dedup.rstrip('x')
+    perfdata+="dedup="+str(dedup_no_x)
+    perfdata+=" "
+
+if compress_ratio_value!='':
+    compress_ratio_no_x = compress_ratio_value.rstrip('x')
+    perfdata+="compress_ratio="+str(compress_ratio_no_x)
     perfdata+=" "
 
 # Sizes can be in K, M, G, or T (maybe P, but I'm not doing this yet)
@@ -361,6 +444,10 @@ if alloc!='':
     msg+=", ALLOC: "+str(alloc)
 if free!='':
     msg+=", FREE: "+str(free)
+if dedup!='':
+    msg+=", DEDUP: "+str(dedup)
+if compress_ratio_value!='':
+    msg+=", COMPRESS: "+str(compress_ratio_value)
 if frag!='' and not fragMsgFilled:
     msg+=", FRAG: "+str(frag)
 if cap!='' and not capMsgFilled:
