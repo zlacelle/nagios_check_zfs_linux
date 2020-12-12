@@ -82,7 +82,7 @@ fragWarnThreshold=50
 fragCritThreshold=80
 useSudoToRunZfsCommands=True
 
-logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARN);
+logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARNING);
 
 def CheckArgBounds( valueArr, minVal, maxVal ):
     for value in valueArr:
@@ -214,6 +214,7 @@ zfsRetval = childProcess.returncode
 if zfsRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
     LogWarningRootProcessWarningAndExit("Generic info - child process - retval", stateNum);
+    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
 
 zfsLines = zfsString.splitlines()
 for idx, line in enumerate(zfsLines):
@@ -318,6 +319,7 @@ try:
 except OSError as osException:
     stateNum = RaiseStateNum(3, stateNum)
     LogWarningRootProcessWarningAndExit("Compression Ratio on ZPool - exception", stateNum, osException); 
+
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
