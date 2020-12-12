@@ -28,6 +28,7 @@
 ########################################################################
 
 from sys import exit
+from sys import version
 import subprocess
 import argparse
 import logging
@@ -35,11 +36,30 @@ import sys
 from array import *
 from types import *
 from os import geteuid
+import os
+
+
+# This check only works in a subset of the actual times we need it, but it is a good effort regardless.
+def pythonVersionCheck():
+    MinimumPython_MajorVersionNumber = 3
+    MinimumPython_MinorVersion = 6
+
+    majorMinor = sys.version_info[:2]
+    major = majorMinor[0]
+    minor = majorMinor[1]
+    if ((major < MinimumPython_MajorVersionNumber) or (major == MinimumPython_MajorVersionNumber and minor < MinimumPython_MinorVersion)):
+        # Note -- We WANT This string syntax, as callers may not have newer ones if running older versions of Python!
+        exit("Error, script needs needs Python %s.%s or later. Detected Python version %s.%s." % (MinimumPython_MajorVersionNumber, MinimumPython_MinorVersion, major, minor))
+
+## Check for reasonably modern version of Python.
+## We do this as soon as we can in the code / run so we can be sure of seeing it.
+pythonVersionCheck();
 
 ##
 # Commands to run
 # CHANGE THESE IF YOU NEED TO
 ##
+sudoCommand='/usr/bin/sudo'
 zpoolCommand='/sbin/zpool'
 zfsCommand='/sbin/zfs'
 
@@ -60,9 +80,9 @@ capCritThreshold=80
 checkFragmentation=False
 fragWarnThreshold=50
 fragCritThreshold=80
+useSudoToRunZfsCommands=True
 
 logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARNING);
-
 
 def CheckArgBounds( valueArr, minVal, maxVal ):
     for value in valueArr:
@@ -92,6 +112,37 @@ def RaiseStateNum( stateNumIn, stateNum ):
         return stateNumIn
     return stateNum
 
+def CheckForExistenceOfCommand(parser, commandToCheck):
+    commandExists = os.path.isfile(commandToCheck)
+    if (not commandExists):
+        global stateNum
+        stateNum = RaiseStateNum(3, stateNum)
+        logging.warning("%s : can't find command %s.", nagiosStatus[stateNum], commandToCheck)
+        exit(stateNum)
+
+def CheckForExistenceOfCommands(parser):
+    CheckForExistenceOfCommand(parser, sudoCommand)
+    CheckForExistenceOfCommand(parser, zpoolCommand)
+    CheckForExistenceOfCommand(parser, zfsCommand)
+
+def LogWarningRootProcessWarningAndExit(contextString, stateNum, optionalException=None):
+    # If the script is failing to run because of this line, you are likely running too old a version of Python. I wish it were possible to make the script just print this
+    # clearly rather than crash, but it's not possible: https://stackoverflow.com/questions/446052/how-can-i-check-for-python-version-in-a-program-that-uses-new-language-features
+    # The version check done above helps in some cases, but won't fix when this f-string language feature fails to compile.
+    warningString = f'{nagiosStatus[stateNum]} : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: Context: {contextString}, then run check script with --nosudo option.'
+    if optionalException is not None:
+        warningString = f'{warningString} Exception: {optionalException}';
+    logging.warning(warningString)
+    exit(stateNum)
+
+def GetArgsForZfsCommand(zfsCommandAndArgsList):
+    if (useSudoToRunZfsCommands):
+        # Prepend command with "sudo -n" for noninteractive (will not ask for password, will just error if there's a problem)
+        return [sudoCommand, '-n'] + zfsCommandAndArgsList;
+    else:
+        # Will just attempt to run the command without sudo
+        return zfsCommandAndArgsList;
+
 ###################################################################################
 ##
 # Parse command line args
@@ -102,6 +153,7 @@ parser = argparse.ArgumentParser(
     epilog='Note that monitor flags (e.g. capacity) require 2 arguments: warning threshold, and critical threshold')
 parser.add_argument('--capacity', help="monitor utilization of zpool (%%, int [0-100])", type=int, nargs=2)
 parser.add_argument('--fragmentation', help="monitor fragmentation of zpool (%%, int [0-100])", type=int, nargs=2)
+parser.add_argument('--nosudo', required=False, action='store_true', help="do not attempt to sudo first when running zfs commands, instead just run them. The nagios user will need permissions to run these commands if used, so edit the sudoers file - see visudo to do this.")
 parser.add_argument('pool', help="name of the zpool to check", type=str)
 
 args = parser.parse_args()
@@ -130,6 +182,11 @@ if args.fragmentation is not None:
         logging.warning("%s  : Fragmentation thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
         parser.print_help()
         exit(stateNum)
+useSudoToRunZfsCommands = not args.nosudo
+
+## Make sure the commands we need are available to be later run
+CheckForExistenceOfCommands(parser);
+
 ###################################################################################
 ###################################################################################
 ##
@@ -144,21 +201,20 @@ if args.fragmentation is not None:
 ##
 # Get generic info about the ZFS environment
 zfsEntries = []
-fullCommand=['/usr/bin/sudo', '-n', zfsCommand, 'list']
+fullCommand = GetArgsForZfsCommand([zfsCommand, 'list'])
 try:
     childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-except OSError:
+except OSError as osException:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
-    exit(stateNum)
+    LogWarningRootProcessWarningAndExit("Generic info about ZFS Environment - exception", stateNum, osException);
 
 zfsString = childProcess.communicate()[0]
 zfsRetval = childProcess.returncode
 
 if zfsRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
+    LogWarningRootProcessWarningAndExit("Generic info - child process - retval", stateNum);
     logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
-    exit(stateNum)
 
 zfsLines = zfsString.splitlines()
 for idx, line in enumerate(zfsLines):
@@ -179,23 +235,22 @@ if not validPool:
 ###################################################################################
 ##
 # Get info on zpool
-
-fullCommand=['/usr/bin/sudo', '-n', zpoolCommand, 'list', args.pool]
+fullCommand = GetArgsForZfsCommand([zpoolCommand, 'list', args.pool])
 
 try:
     childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-except OSError:
+except OSError as osException:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-    exit(stateNum)
+    LogWarningRootProcessWarningAndExit("Zpool command - exception", stateNum, osException);
+
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-    exit(stateNum)
+    commandDebugString = f"Zpool command - retval. Original command: \"{fullCommand}\"";
+    LogWarningRootProcessWarningAndExit(commandDebugString, stateNum);
 
 zpoolLines=zpoolString.splitlines()
 zpoolMeta=zpoolLines[0].decode().split()
@@ -256,22 +311,21 @@ if checkFragmentation and frag=='':
 
 # Get compressratio on zpool
 
-checkForCompression=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compression', args.pool]
+checkForCompression = GetArgsForZfsCommand([zfsCommand, 'get', 'compression', args.pool])
 
 try:
     childProcess = subprocess.Popen(checkForCompression, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-except OSError:
+except OSError as osException:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-    exit(stateNum)
+    LogWarningRootProcessWarningAndExit("Compression Ratio on ZPool - exception", stateNum, osException); 
+
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-    exit(stateNum)
+    LogWarningRootProcessWarningAndExit("Compression Ratio on ZPool - Retval", stateNum); 
 
 zpoolLines=zpoolString.splitlines()
 zpoolMeta=zpoolLines[0].decode().split()
@@ -296,22 +350,21 @@ if compressName=='':
     logging.warning("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
     exit(stateNum)
 if compressValue=='on':
-    getCompressRatioCommand=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compressratio', args.pool]
+    getCompressRatioCommand = GetArgsForZfsCommand([zfsCommand, 'get', 'compressratio', args.pool])
 
     try:
         childProcess = subprocess.Popen(getCompressRatioCommand, stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError:
+    except OSError as osException:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-        exit(stateNum)
+        LogWarningRootProcessWarningAndExit("Get compression ratio - Exception", stateNum, osException);
+
     zpoolString = childProcess.communicate()[0]
     zpoolRetval = childProcess.returncode
 
     if zpoolRetval is 1:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
-        exit(stateNum)
+        LogWarningRootProcessWarningAndExit("Get compression ratio - Retval", stateNum);
 
     zpoolLines=zpoolString.splitlines()
     zpoolMeta=zpoolLines[0].decode().split()
