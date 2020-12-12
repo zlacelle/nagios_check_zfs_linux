@@ -19,8 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: PyCQA PyLint
+      - name: Checkout Actions
         uses: actions/checkout@v1
+      - name: Checkout Python
         uses: actions/setup-python@v1
+      - name: Install PyLint
         run: pip install pylint
+      - name: Run PyLint
         run: pylint check_zfs.py
