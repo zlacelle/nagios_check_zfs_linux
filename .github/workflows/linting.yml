@@ -18,8 +18,9 @@ jobs:
     name: Code Linting
     runs-on: ubuntu-latest
     
-    steps: 
-      - name: pylint3-action
-        uses: LakshitF/pylint3-action@v2
-        with:
-          filename: check_zfs.py
+    steps:
+      - name: PyCQA PyLint
+        uses: actions/checkout@v1
+        uses: actions/setup-python@v1
+        run: pip install pylint
+        run: pylint check_zfs.py
