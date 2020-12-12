@@ -211,7 +211,7 @@ except OSError as osException:
 zfsString = childProcess.communicate()[0]
 zfsRetval = childProcess.returncode
 
-if zfsRetval is 1:
+if zfsRetval == 1:
     stateNum = RaiseStateNum(3, stateNum)
     LogWarningRootProcessWarningAndExit("Generic info - child process - retval", stateNum);
     logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
@@ -247,7 +247,7 @@ except OSError as osException:
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
-if zpoolRetval is 1:
+if zpoolRetval == 1:
     stateNum = RaiseStateNum(3, stateNum)
     commandDebugString = f"Zpool command - retval. Original command: \"{fullCommand}\"";
     LogWarningRootProcessWarningAndExit(commandDebugString, stateNum);
@@ -323,7 +323,7 @@ except OSError as osException:
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
-if zpoolRetval is 1:
+if zpoolRetval == 1:
     stateNum = RaiseStateNum(3, stateNum)
     LogWarningRootProcessWarningAndExit("Compression Ratio on ZPool - Retval", stateNum); 
 
@@ -362,7 +362,7 @@ if compressValue=='on':
     zpoolString = childProcess.communicate()[0]
     zpoolRetval = childProcess.returncode
 
-    if zpoolRetval is 1:
+    if zpoolRetval == 1:
         stateNum = RaiseStateNum(3, stateNum)
         LogWarningRootProcessWarningAndExit("Get compression ratio - Retval", stateNum);
 
