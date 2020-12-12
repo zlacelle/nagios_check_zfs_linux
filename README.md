@@ -28,14 +28,29 @@ fragmentation, and other things for use with Nagios monitoring.
 
 It provides perfdata feedback as well.
 
-### Currently tested OS/ZFS versions
+### Release Testing
 
-* Ubuntu 14.04 LTS, ZFS v5
-* Ubuntu 16.04 LTS, ZFS v5
-* Ubuntu 18.04 LTS, ZFS v5
-* Ubuntu 20.04 LTS, ZFS v5
-* CentOS 7, ZFS v5
+As others report testing with different OS/ZFS versions, I will add them
+in for each tag. It's likely that this plugin works with relatively
+new versions of Ubuntu, CentOS, and OmniOS versions, as the Python
+and ZFS functions used rarely change.
+
+#### Tested OS/ZFS versions (Release 1.5)
+
+* Ubuntu 20.04, ZFS FS v5
+
+#### Tested OS/ZFS versions (Release 1.4)
+
+* Ubuntu 14.04 LTS, ZFS FS v5
+* Ubuntu 16.04 LTS, ZFS FS v5
+* Ubuntu 18.04 LTS, ZFS FS v5 
+* Ubuntu 20.04 LTS, ZFS FS v5
+* CentOS 7, ZFS FS v5
 * OmniOS r151030
+
+#### Other Releases
+
+For testing on older releases, see the CHANGELOG associated with the tag.
 
 ### Example Nagios4 Configuration
 
