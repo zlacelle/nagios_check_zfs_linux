@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 ########################################################################
 ##
@@ -61,7 +61,7 @@ checkFragmentation=False
 fragWarnThreshold=50
 fragCritThreshold=80
 
-logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARN);
+logging.basicConfig(stream=sys.stdout, format='%(message)s', level=logging.WARNING);
 
 
 def CheckArgBounds( valueArr, minVal, maxVal ):
@@ -115,7 +115,7 @@ if args.capacity is not None:
     retVal = CheckArgBounds(capArr, 0, 100)
     if retVal is False:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warn("%s : Capacity thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
+        logging.warning("%s : Capacity thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
         parser.print_help()
         exit(stateNum)
 retVal = True
@@ -127,7 +127,7 @@ if args.fragmentation is not None:
     retVal = CheckArgBounds(fragArr, 0, 100)
     if retVal is False:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warn("%s  : Fragmentation thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
+        logging.warning("%s  : Fragmentation thresholds must be between 0 and 100 (as a percent).", nagiosStatus[stateNum])
         parser.print_help()
         exit(stateNum)
 ###################################################################################
@@ -149,7 +149,7 @@ try:
     childProcess = subprocess.Popen(fullCommand, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
+    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
     exit(stateNum)
 
 zfsString = childProcess.communicate()[0]
@@ -157,7 +157,7 @@ zfsRetval = childProcess.returncode
 
 if zfsRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
+    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zfs",  nagiosStatus[stateNum])
     exit(stateNum)
 
 zfsLines = zfsString.splitlines()
@@ -173,7 +173,7 @@ for entry in zfsEntries:
         validPool=True
 if not validPool:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : Pool %s is invalid. Please select a valid pool.",  nagiosStatus[stateNum], args.pool)
+    logging.warning("%s : Pool %s is invalid. Please select a valid pool.",  nagiosStatus[stateNum], args.pool)
     exit(stateNum)
 
 ###################################################################################
@@ -187,14 +187,14 @@ try:
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 
 zpoolLines=zpoolString.splitlines()
@@ -239,19 +239,19 @@ for idx, fieldName in enumerate(zpoolMeta):
 
 if name=='':
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
+    logging.warning("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
     exit(stateNum)
 if health=='':
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : Missing required field in zpool output: HEALTH", nagiosStatus[stateNum])
+    logging.warning("%s : Missing required field in zpool output: HEALTH", nagiosStatus[stateNum])
     exit(stateNum)
 if checkCapacity and cap=='':
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s Cannot monitor capacity without zpool output: CAP. Outputs are %s", nagiosStatus[stateNum], zpoolMetaStr)
+    logging.warning("%s Cannot monitor capacity without zpool output: CAP. Outputs are %s", nagiosStatus[stateNum], zpoolMetaStr)
     exit(stateNum)
 if checkFragmentation and frag=='':
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : Cannot monitor fragmentation without zpool output: FRAG. Outputs are ", nagiosStatus[stateNum], zpoolMetaStr)
+    logging.warning("%s : Cannot monitor fragmentation without zpool output: FRAG. Outputs are ", nagiosStatus[stateNum], zpoolMetaStr)
     exit(stateNum)
 
 # Get compressratio on zpool
@@ -263,14 +263,14 @@ try:
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 except OSError:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 zpoolString = childProcess.communicate()[0]
 zpoolRetval = childProcess.returncode
 
 if zpoolRetval is 1:
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+    logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
     exit(stateNum)
 
 zpoolLines=zpoolString.splitlines()
@@ -293,7 +293,7 @@ for idx, fieldName in enumerate(zpoolMeta):
 
 if compressName=='':
     stateNum = RaiseStateNum(3, stateNum)
-    logging.warn("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
+    logging.warning("%s: Missing required field in zpool output: NAME", nagiosStatus[stateNum])
     exit(stateNum)
 if compressValue=='on':
     getCompressRatioCommand=['/usr/bin/sudo', '-n', zfsCommand, 'get', 'compressratio', args.pool]
@@ -303,14 +303,14 @@ if compressValue=='on':
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warn("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+        logging.warning("%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
         exit(stateNum)
     zpoolString = childProcess.communicate()[0]
     zpoolRetval = childProcess.returncode
 
     if zpoolRetval is 1:
         stateNum = RaiseStateNum(3, stateNum)
-        logging.warn( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
+        logging.warning( "%s : process must be run as root. Possible solution: add the following to your visudo: nagios ALL=NOPASSWD: /sbin/zpool", nagiosStatus[stateNum])
         exit(stateNum)
 
     zpoolLines=zpoolString.splitlines()
@@ -455,5 +455,5 @@ if cap!='' and not capMsgFilled:
 
 ##
 # Print our output and return
-logging.warn("%s: %s | %s", nagiosStatus[stateNum], msg, perfdata)
+logging.warning("%s: %s | %s", nagiosStatus[stateNum], msg, perfdata)
 exit(stateNum)
