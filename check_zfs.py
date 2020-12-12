@@ -41,8 +41,9 @@ import os
 
 # This check only works in a subset of the actual times we need it, but it is a good effort regardless.
 def pythonVersionCheck():
+    # Python 3.5 is current released version on Ubuntu 16.04, the oldest version supported. LTS remains supported through 2021.
     MinimumPython_MajorVersionNumber = 3
-    MinimumPython_MinorVersion = 6
+    MinimumPython_MinorVersion = 5
 
     majorMinor = sys.version_info[:2]
     major = majorMinor[0]

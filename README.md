@@ -37,6 +37,9 @@ and ZFS functions used rarely change.
 
 #### Tested OS/ZFS versions (Release 1.5)
 
+**NOTE: Dropping support for Python <3.5. Effectively, this means
+Ubuntu <16.04.**
+
 * Ubuntu 20.04, ZFS FS v5
 
 #### Tested OS/ZFS versions (Release 1.4)
