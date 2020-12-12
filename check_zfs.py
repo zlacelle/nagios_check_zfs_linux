@@ -3,7 +3,7 @@
 ########################################################################
 ##
 ## Written by Zachary LaCelle
-## Copyright 2016
+## Copyright 2016-2020
 ## Licensed under GPL (see below)
 ##
 ## Nagios script to monitor ZFS pools/filesystems
