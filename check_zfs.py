@@ -112,7 +112,7 @@ def RaiseStateNum( stateNumIn, stateNum ):
         return stateNumIn
     return stateNum
 
-def CheckForExistenceOfCommand(parser, commandToCheck):
+def CheckIfFileExists(parser, commandToCheck):
     commandExists = os.path.isfile(commandToCheck)
     if (not commandExists):
         global stateNum
@@ -121,9 +121,9 @@ def CheckForExistenceOfCommand(parser, commandToCheck):
         exit(stateNum)
 
 def CheckForExistenceOfCommands(parser):
-    CheckForExistenceOfCommand(parser, sudoCommand)
-    CheckForExistenceOfCommand(parser, zpoolCommand)
-    CheckForExistenceOfCommand(parser, zfsCommand)
+    CheckIfFileExists(parser, sudoCommand)
+    CheckIfFileExists(parser, zpoolCommand)
+    CheckIfFileExists(parser, zfsCommand)
 
 def LogWarningRootProcessWarningAndExit(contextString, stateNum, optionalException=None):
     # If the script is failing to run because of this line, you are likely running too old a version of Python. I wish it were possible to make the script just print this
