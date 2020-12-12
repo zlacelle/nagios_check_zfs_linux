@@ -1,0 +1,32 @@
+# 
+# This is the default CodeQL configuration, which
+# should work for this project.
+#
+name: "PyLint"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ master ]
+  schedule:
+    - cron: '13 9 * * 1'
+
+jobs:
+  lint:
+    name: Code Linting
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    
+    steps:
+      - name: Checkout Actions
+        uses: actions/checkout@v1
+      - name: Checkout Python
+        uses: actions/setup-python@v1
+      - name: Install PyLint
+        run: pip install pylint
+      - name: Run PyLint
+        run: pylint check_zfs.py
