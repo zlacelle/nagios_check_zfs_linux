@@ -29,4 +29,4 @@ jobs:
       - name: Install PyLint
         run: pip install pylint
       - name: Run PyLint
-        run: pylint check_zfs.py
+        run: pylint --rcfile=.pylintrc check_zfs.py
